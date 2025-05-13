@@ -1,0 +1,54 @@
+version: '3'
+
+tasks:
+  backend:lock:
+    desc: Update the lock file after changing dependencies
+    cmds:
+      - cd backend && uv lock
+
+  backend:sync:
+    desc: Sync the backend venv with the lock file
+    cmds:
+      - cd backend && uv sync
+
+  build:
+    desc: Build the frontend and check backend type safety
+    cmds:
+      - task: build-frontend
+      - task: build-backend
+
+  build-backend:
+    dir: backend
+    cmds:
+      - uv run mypy app
+
+  build-frontend:
+    dir: frontend
+    cmds:
+      - npm install
+      - npm run build
+
+
+  start:
+    desc: Start the frontend development server
+    dir: frontend
+    deps: [build]
+    cmds:
+      - npm run dev
+
+  backend:start:
+    desc: Start the backend API server
+    cmds:
+      - cd backend && uv run uvicorn app.main:app --reload
+
+  all:start:
+    desc: Start both frontend and backend (dev mode)
+    cmds:
+      - task backend:start
+      - task start
+    silent: false
+
+  stop:
+    desc: Stop the frontend development server
+    cmds:
+      - pkill -f "npm run dev" || true
